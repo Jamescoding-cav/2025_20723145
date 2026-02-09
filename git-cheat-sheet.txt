@@ -1,0 +1,5 @@
+show: shows information about commits, files, or changes (e.g., a commit's details).
+log: shows the commit history.
+checkout: switches branches/commits (and can restore files depending on usage).
+init: creates a new Git repository.
+reset: moves HEAD/branch pointer; can unstage or undo commits depending on options.
