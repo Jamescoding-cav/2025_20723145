@@ -1,0 +1,38 @@
+# --- Windows / common binaries ---
+*.exe
+*.dll
+*.lib
+*.obj
+*.pdb
+*.o
+*.so
+*.class
+
+# --- Build output folders ---
+build/
+Build/
+bin/
+obj/
+out/
+Debug/
+Release/
+x64/
+x86/
+
+# --- Visual Studio (common) ---
+.vs/
+*.user
+*.suo
+*.vcxproj.user
+*.VC.db
+*.VC.VC.opendb
+
+# --- CMake ---
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# --- Logs / temp ---
+*.log
+*.tmp
