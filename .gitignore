@@ -37,3 +37,7 @@ Makefile
 *.log
 *.tmp
 Worksheet4/hello_cmake/build/
+
+# Worksheet5 Doxygen output
+Worksheet5/html/
+
