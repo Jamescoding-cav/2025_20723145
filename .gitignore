@@ -36,3 +36,4 @@ Makefile
 # --- Logs / temp ---
 *.log
 *.tmp
+Worksheet4/hello_cmake/build/
