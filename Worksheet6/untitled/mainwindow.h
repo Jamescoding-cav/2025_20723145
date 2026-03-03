@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QString>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -17,7 +18,15 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+public slots:
+    void handleButton();
+    void handleButton2();
+
+signals:
+    void statusUpdateMessage(const QString &message, int timeout);
+
 private:
     Ui::MainWindow *ui;
 };
+
 #endif // MAINWINDOW_H
