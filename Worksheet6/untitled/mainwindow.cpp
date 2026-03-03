@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QHeaderView>
 #include <QPushButton>
 #include <QStatusBar>
@@ -41,8 +43,6 @@ MainWindow::MainWindow(QWidget *parent)
     // Make sure the text isn't truncated with "..."
     ui->treeView->resizeColumnToContents(0);
     ui->treeView->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    // Optional: show everything expanded while testing
-    // ui->treeView->expandAll();
 
     // -------------------------
     // Exercise 3: status bar updates via custom signal
@@ -56,6 +56,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->pushButton_2, &QPushButton::released,
             this, &MainWindow::handleButton2);
+
+    // Exercise 6 note:
+    // If the action objectName is "actionOpenFile" and the slot name is
+    // "on_actionOpenFile_triggered", Qt will auto-connect this for you.
 }
 
 MainWindow::~MainWindow()
@@ -66,10 +70,33 @@ MainWindow::~MainWindow()
 
 void MainWindow::handleButton()
 {
-    emit statusUpdateMessage("Button 1 was clicked", 0);
+    emit statusUpdateMessage("Button 1 was clicked", 2000);
 }
 
 void MainWindow::handleButton2()
 {
-    emit statusUpdateMessage("Button 2 was clicked", 0);
+    emit statusUpdateMessage("Button 2 was clicked", 2000);
+}
+
+// -------------------------
+// Exercise 6: toolbar/menu action
+// -------------------------
+void MainWindow::on_actionOpenFile_triggered()
+{
+    // Open a file picker dialog
+    const QString filename = QFileDialog::getOpenFileName(
+        this,
+        tr("Open File"),
+        QString(),
+        tr("All Files (*.*)")
+        );
+
+    if (filename.isEmpty()) {
+        emit statusUpdateMessage("Open File cancelled", 2000);
+        return;
+    }
+
+    // Show just the file name (not full path) in the status bar
+    const QString baseName = QFileInfo(filename).fileName();
+    emit statusUpdateMessage(QString("Opened: %1").arg(baseName), 4000);
 }
