@@ -171,6 +171,10 @@
    </attribute>
   </widget>
   <action name="actionOpenFile">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/Icons/Snipping icon.png</normaloff>:/Icons/Icons/Snipping icon.png</iconset>
+   </property>
    <property name="text">
     <string>Open File</string>
    </property>
@@ -179,6 +183,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="icons.qrc"/>
+ </resources>
  <connections/>
 </ui>
