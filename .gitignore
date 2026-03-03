@@ -26,6 +26,10 @@ x86/
 *.vcxproj.user
 *.VC.db
 *.VC.VC.opendb
+# --- Qt Creator ---
+.qtcreator/
+**/.qtcreator/
+*.autosave
 
 # --- CMake ---
 CMakeFiles/
