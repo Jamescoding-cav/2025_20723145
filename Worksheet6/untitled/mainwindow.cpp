@@ -1,11 +1,13 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
-#include <QFileDialog>
-#include <QFileInfo>
 #include <QHeaderView>
 #include <QPushButton>
 #include <QStatusBar>
+
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QModelIndex>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -14,52 +16,42 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    // -------------------------
-    // Exercise 4: Model-based TreeView
-    // -------------------------
+    // Model for TreeView
     partList = new ModelPartList("Parts List");
     ui->treeView->setModel(partList);
 
-    // Build a demo tree
+    // Build a demo tree (OK for worksheet exercises)
     ModelPart* rootItem = partList->getRootItem();
 
-    // 3 top-level items, each with 5 children
     for (int i = 0; i < 3; i++) {
-        QString name = QString("TopLevel %1").arg(i);
-        QString visible("true");
+        const QString name = QString("TopLevel %1").arg(i);
+        const QString visible = "true";
 
-        ModelPart* childItem = new ModelPart({ name, visible });
-        rootItem->appendChild(childItem);
+        ModelPart* top = new ModelPart({ name, visible });
+        rootItem->appendChild(top);
 
         for (int j = 0; j < 5; j++) {
-            QString childName = QString("Item %1,%2").arg(i).arg(j);
-            QString childVisible("true");
+            const QString childName = QString("Item %1,%2").arg(i).arg(j);
+            const QString childVisible = "true";
 
-            ModelPart* childChildItem = new ModelPart({ childName, childVisible });
-            childItem->appendChild(childChildItem);
+            ModelPart* child = new ModelPart({ childName, childVisible });
+            top->appendChild(child);
         }
     }
 
-    // Make sure the text isn't truncated with "..."
-    ui->treeView->resizeColumnToContents(0);
     ui->treeView->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ui->treeView->expandAll();
 
-    // -------------------------
-    // Exercise 3: status bar updates via custom signal
-    // -------------------------
+    // Status bar via signal
     connect(this, &MainWindow::statusUpdateMessage,
             ui->statusbar, &QStatusBar::showMessage);
 
-    // Buttons -> slots
+    // Buttons
     connect(ui->pushButton, &QPushButton::released,
             this, &MainWindow::handleButton);
 
     connect(ui->pushButton_2, &QPushButton::released,
             this, &MainWindow::handleButton2);
-
-    // Exercise 6 note:
-    // If the action objectName is "actionOpenFile" and the slot name is
-    // "on_actionOpenFile_triggered", Qt will auto-connect this for you.
 }
 
 MainWindow::~MainWindow()
@@ -78,25 +70,45 @@ void MainWindow::handleButton2()
     emit statusUpdateMessage("Button 2 was clicked", 2000);
 }
 
-// -------------------------
-// Exercise 6: toolbar/menu action
-// -------------------------
 void MainWindow::on_actionOpenFile_triggered()
 {
-    // Open a file picker dialog
-    const QString filename = QFileDialog::getOpenFileName(
+    const QString fileName = QFileDialog::getOpenFileName(
         this,
         tr("Open File"),
         QString(),
-        tr("All Files (*.*)")
+        tr("STL Files (*.stl);;Text Files (*.txt);;All Files (*.*)")
         );
 
-    if (filename.isEmpty()) {
-        emit statusUpdateMessage("Open File cancelled", 2000);
+    if (fileName.isEmpty()) {
+        emit statusUpdateMessage("Open File cancelled", 0);
         return;
     }
 
-    // Show just the file name (not full path) in the status bar
-    const QString baseName = QFileInfo(filename).fileName();
-    emit statusUpdateMessage(QString("Opened: %1").arg(baseName), 4000);
+    emit statusUpdateMessage("Selected: " + fileName, 0);
+
+    // Rename currently selected tree item
+    QModelIndex current = ui->treeView->currentIndex();
+    if (!current.isValid()) {
+        emit statusUpdateMessage("No tree item selected to rename", 0);
+        return;
+    }
+
+    // Force rename to column 0 (name column)
+    QModelIndex nameIndex = current.sibling(current.row(), 0);
+    const QString baseName = QFileInfo(fileName).fileName();
+
+    // IMPORTANT: Explicit role (avoids signature mismatch / weird defaults)
+    QAbstractItemModel* model = ui->treeView->model();
+    if (!model) {
+        emit statusUpdateMessage("No model attached to treeView", 4000);
+        return;
+    }
+
+
+    if (!model->setData(nameIndex, baseName, Qt::EditRole)) {
+        emit statusUpdateMessage("Rename failed (model setData returned false)", 5000);
+        return;
+    }
+
+    emit statusUpdateMessage("Renamed selected item to: " + baseName, 4000);
 }
