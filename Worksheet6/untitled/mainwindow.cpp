@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "seconddialog.h"
 
 #include <QHeaderView>
 #include <QPushButton>
@@ -9,7 +10,7 @@
 #include <QFileInfo>
 #include <QModelIndex>
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , partList(nullptr)
@@ -20,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
     partList = new ModelPartList("Parts List");
     ui->treeView->setModel(partList);
 
-    // Build a demo tree (OK for worksheet exercises)
+    // Build a demo tree
     ModelPart* rootItem = partList->getRootItem();
 
     for (int i = 0; i < 3; i++) {
@@ -44,14 +45,19 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Status bar via signal
     connect(this, &MainWindow::statusUpdateMessage,
-            ui->statusbar, &QStatusBar::showMessage);
+        ui->statusbar, &QStatusBar::showMessage);
 
-    // Buttons
+    // Button 1
     connect(ui->pushButton, &QPushButton::released,
-            this, &MainWindow::handleButton);
+        this, &MainWindow::handleButton);
 
+    // Button 2
     connect(ui->pushButton_2, &QPushButton::released,
-            this, &MainWindow::handleButton2);
+        this, &MainWindow::handleButton2);
+
+    // Tree view click - shows selected item name in status bar
+    connect(ui->treeView, &QTreeView::clicked,
+        this, &MainWindow::handleTreeClicked);
 }
 
 MainWindow::~MainWindow()
@@ -67,7 +73,47 @@ void MainWindow::handleButton()
 
 void MainWindow::handleButton2()
 {
-    emit statusUpdateMessage("Button 2 was clicked", 2000);
+    // Get the currently selected tree item
+    QModelIndex index = ui->treeView->currentIndex();
+    if (!index.isValid()) {
+        emit statusUpdateMessage("No item selected - please select a tree item first", 2000);
+        return;
+    }
+
+    ModelPart* part = static_cast<ModelPart*>(index.internalPointer());
+
+    // Open the second dialog and pre-populate it with the part's current values
+    SecondDialog dialog(this);
+    dialog.loadFromModelPart(part);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        // Save the edited values back to the part
+        dialog.saveToModelPart(part);
+
+        // Refresh the treeview so name/visible column updates are shown
+        QModelIndex topLeft = partList->index(index.row(), 0, index.parent());
+        QModelIndex bottomRight = partList->index(index.row(), 1, index.parent());
+        emit partList->dataChanged(topLeft, bottomRight);
+
+        emit statusUpdateMessage("Dialog accepted: " + part->data(0).toString(), 0);
+    }
+    else {
+        emit statusUpdateMessage("Dialog rejected", 0);
+    }
+}
+
+void MainWindow::handleTreeClicked()
+{
+    // Get the currently selected item index
+    QModelIndex index = ui->treeView->currentIndex();
+    if (!index.isValid()) return;
+
+    // Get a pointer to the selected ModelPart
+    ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
+
+    // Get the name from column 0 and display in status bar
+    QString name = selectedPart->data(0).toString();
+    emit statusUpdateMessage(name + " selected", 0);
 }
 
 void MainWindow::on_actionOpenFile_triggered()
@@ -77,7 +123,7 @@ void MainWindow::on_actionOpenFile_triggered()
         tr("Open File"),
         QString(),
         tr("STL Files (*.stl);;Text Files (*.txt);;All Files (*.*)")
-        );
+    );
 
     if (fileName.isEmpty()) {
         emit statusUpdateMessage("Open File cancelled", 0);
@@ -97,13 +143,11 @@ void MainWindow::on_actionOpenFile_triggered()
     QModelIndex nameIndex = current.sibling(current.row(), 0);
     const QString baseName = QFileInfo(fileName).fileName();
 
-    // IMPORTANT: Explicit role (avoids signature mismatch / weird defaults)
     QAbstractItemModel* model = ui->treeView->model();
     if (!model) {
         emit statusUpdateMessage("No model attached to treeView", 4000);
         return;
     }
-
 
     if (!model->setData(nameIndex, baseName, Qt::EditRole)) {
         emit statusUpdateMessage("Rename failed (model setData returned false)", 5000);
