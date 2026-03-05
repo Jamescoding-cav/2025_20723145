@@ -58,6 +58,9 @@ MainWindow::MainWindow(QWidget* parent)
     // Tree view click - shows selected item name in status bar
     connect(ui->treeView, &QTreeView::clicked,
         this, &MainWindow::handleTreeClicked);
+
+    // Add context menu action to tree view
+    ui->treeView->addAction(ui->actionItem_Options);
 }
 
 MainWindow::~MainWindow()
@@ -155,4 +158,35 @@ void MainWindow::on_actionOpenFile_triggered()
     }
 
     emit statusUpdateMessage("Renamed selected item to: " + baseName, 4000);
+}
+
+void MainWindow::on_actionItem_Options_triggered()
+{
+    // Get the currently selected tree item
+    QModelIndex index = ui->treeView->currentIndex();
+    if (!index.isValid()) {
+        emit statusUpdateMessage("No item selected - right click a tree item first", 2000);
+        return;
+    }
+
+    ModelPart* part = static_cast<ModelPart*>(index.internalPointer());
+
+    // Open the second dialog and pre-populate it with the part's current values
+    SecondDialog dialog(this);
+    dialog.loadFromModelPart(part);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        // Save the edited values back to the part
+        dialog.saveToModelPart(part);
+
+        // Refresh the treeview so name/visible column updates are shown
+        QModelIndex topLeft = partList->index(index.row(), 0, index.parent());
+        QModelIndex bottomRight = partList->index(index.row(), 1, index.parent());
+        emit partList->dataChanged(topLeft, bottomRight);
+
+        emit statusUpdateMessage("Item updated: " + part->data(0).toString(), 0);
+    }
+    else {
+        emit statusUpdateMessage("Edit cancelled", 0);
+    }
 }

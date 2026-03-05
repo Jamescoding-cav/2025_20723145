@@ -33,6 +33,7 @@ signals:
 
 private slots:
     void on_actionOpenFile_triggered();
+    void on_actionItem_Options_triggered();
 
 private:
     Ui::MainWindow* ui;
